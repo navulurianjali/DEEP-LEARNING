@@ -1,0 +1,31 @@
+# Overfitting verification: DecisionTree on Breast Cancer dataset
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
+
+bc = datasets.load_breast_cancer()
+X, y = bc.data, bc.target
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+
+depths = list(range(1, 21))
+train_acc = []
+test_acc = []
+for d in depths:
+    dt = DecisionTreeClassifier(max_depth=d, random_state=42)
+    dt.fit(X_train, y_train)
+    train_acc.append(dt.score(X_train, y_train))
+    test_acc.append(dt.score(X_test, y_test))
+
+# Print first few rows to show trend
+for d, tr, te in zip(depths[:10], train_acc[:10], test_acc[:10]):
+    print(f"max_depth={d:2d}: train_acc={tr:.4f}, test_acc={te:.4f}")
+
+# Plot
+plt.plot(depths, train_acc, label='Train Accuracy')
+plt.plot(depths, test_acc, label='Test Accuracy')
+plt.xlabel('max_depth')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.title('Overfitting check: train vs test accuracy')
+plt.show()

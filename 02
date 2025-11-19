@@ -1,0 +1,19 @@
+# Multi-class confusion matrix (Iris) with Logistic Regression
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+import pandas as pd
+
+iris = datasets.load_iris()
+X, y = iris.data, iris.target
+names = iris.target_names
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=1, stratify=y)
+clf = LogisticRegression(max_iter=10000).fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+cm = confusion_matrix(y_test, y_pred)
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion matrix (rows=true, cols=pred):\n", pd.DataFrame(cm, index=names, columns=names))
+print("\nClassification report:\n", classification_report(y_test, y_pred, target_names=names))

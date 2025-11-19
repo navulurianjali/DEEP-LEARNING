@@ -1,0 +1,38 @@
+import cv2
+import numpy as np
+from skimage import data
+import matplotlib.pyplot as plt
+
+img = data.coins()
+ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+# Noise removal
+kernel = np.ones((3,3), np.uint8)
+opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=2)
+
+# Sure background area
+sure_bg = cv2.dilate(opening, kernel, iterations=3)
+
+# Distance transform
+dist = cv2.distanceTransform(opening, cv2.DIST_L2, 5)
+ret, sure_fg = cv2.threshold(dist, 0.5*dist.max(), 255, 0)
+
+# Unknown region
+sure_fg = np.uint8(sure_fg)
+unknown = cv2.subtract(sure_bg, sure_fg)
+
+# Marker labeling
+ret, markers = cv2.connectedComponents(sure_fg)
+markers = markers + 1
+markers[unknown == 0] = 0
+
+# Convert to color for watershed
+img_color = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+
+# Apply watershed
+markers = cv2.watershed(img_color, markers)
+img_color[markers == -1] = [255, 0, 0]   # Red boundaries
+
+plt.imshow(img_color)
+plt.title("Watershed Segmented Image")
+plt.show()

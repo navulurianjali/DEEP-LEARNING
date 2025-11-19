@@ -1,0 +1,29 @@
+# Linear Regression evaluation on Diabetes dataset
+from sklearn import datasets
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
+
+diab = datasets.load_diabetes()
+X, y = diab.data, diab.target
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
+
+lr = LinearRegression().fit(X_train, y_train)
+y_pred = lr.predict(X_test)
+
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+print("MSE:", mse)
+print("R2:", r2)
+print("Coefficients (first 5):", lr.coef_[:5])
+print("Intercept:", lr.intercept_)
+
+# Residual plot
+residuals = y_test - y_pred
+plt.scatter(y_pred, residuals)
+plt.axhline(0, color='black')
+plt.xlabel('Predicted')
+plt.ylabel('Residuals')
+plt.title('Residuals vs Predicted')
+plt.show()

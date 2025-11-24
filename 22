@@ -1,0 +1,60 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import to_categorical
+
+# --- 1. Data Generation ---
+n_classes = 4
+X, y = make_blobs(n_samples=500, centers=n_classes, cluster_std=1.0, random_state=42)
+# One-hot encode the labels
+y_onehot = to_categorical(y, num_classes=n_classes)
+X_train, X_test, y_train_onehot, y_test_onehot = train_test_split(X, y_onehot, test_size=0.3, random_state=42)
+
+# --- 2. Model Definition ---
+model_multi = Sequential([
+    Dense(20, input_dim=2, activation='relu'),
+    Dense(15, activation='relu'),
+    Dense(n_classes, activation='softmax') # Softmax for multi-class classification
+])
+
+# --- 3. Model Compilation and Training ---
+model_multi.compile(optimizer=Adam(learning_rate=0.01),
+                    loss='categorical_crossentropy',
+                    metrics=['accuracy'])
+
+print("--- Training Multi-Class Model (make_blobs) ---")
+history = model_multi.fit(X_train, y_train_onehot,
+                          epochs=100,
+                          batch_size=32,
+                          verbose=0)
+
+# --- 4. Performance Verification ---
+loss, accuracy = model_multi.evaluate(X_test, y_test_onehot, verbose=0)
+print(f"\n✅ Test Accuracy: {accuracy*100:.2f}%")
+print(f"Loss: {loss:.4f}")
+
+# --- 5. Visualization (Decision Boundary) ---
+def plot_decision_boundary_multi(model, X, y_onehot, title):
+    h = 0.02
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()], verbose=0)
+    Z = np.argmax(Z, axis=1).reshape(xx.shape)
+    y = np.argmax(y_onehot, axis=1)
+
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, cmap=plt.cm.viridis, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.viridis, edgecolors='k')
+    plt.title(title)
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.show()
+
+plot_decision_boundary_multi(model_multi, X, y_onehot, "NN Decision Boundary (Multi-Class Blobs Data)")

@@ -1,0 +1,58 @@
+import numpy as np
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+
+# --- 1. Data Setup (make_moons) ---
+X, y = make_moons(n_samples=400, noise=0.15, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+results = {}
+
+# --- 2. Model Configuration 1: Standard RELU (Deep Structure) ---
+print("--- 1. Testing RELU Activation (Deep) ---")
+model_relu = Sequential([
+    Dense(32, input_dim=2, activation='relu'),
+    Dense(16, activation='relu'),
+    Dense(8, activation='relu'),
+    Dense(1, activation='sigmoid')
+])
+model_relu.compile(optimizer=Adam(learning_rate=0.01), loss='binary_crossentropy', metrics=['accuracy'])
+model_relu.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+loss, accuracy = model_relu.evaluate(X_test, y_test, verbose=0)
+results['RELU_Deep'] = accuracy
+print(f"RELU_Deep Test Accuracy: {accuracy*100:.2f}%")
+
+# --- 3. Model Configuration 2: Sigmoid/Tanh (Shallow Structure) ---
+print("\n--- 2. Testing Tanh/Sigmoid Activation (Shallow) ---")
+model_tanh = Sequential([
+    Dense(10, input_dim=2, activation='tanh'), # Tanh is a popular choice before RELU
+    Dense(1, activation='sigmoid')
+])
+model_tanh.compile(optimizer=Adam(learning_rate=0.01), loss='binary_crossentropy', metrics=['accuracy'])
+model_tanh.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+loss, accuracy = model_tanh.evaluate(X_test, y_test, verbose=0)
+results['Tanh_Shallow'] = accuracy
+print(f"Tanh_Shallow Test Accuracy: {accuracy*100:.2f}%")
+
+# --- 4. Model Configuration 3: Linear/Identity Activation (Deep, but non-linear only in output) ---
+print("\n--- 3. Testing Linear Activation (Poor non-linear capability) ---")
+model_linear = Sequential([
+    Dense(32, input_dim=2, activation='linear'), # Identity function
+    Dense(16, activation='linear'),
+    Dense(1, activation='sigmoid')
+])
+model_linear.compile(optimizer=Adam(learning_rate=0.01), loss='binary_crossentropy', metrics=['accuracy'])
+model_linear.fit(X_train, y_train, epochs=100, batch_size=32, verbose=0)
+loss, accuracy = model_linear.evaluate(X_test, y_test, verbose=0)
+results['Linear'] = accuracy
+print(f"Linear Test Accuracy: {accuracy*100:.2f}%")
+
+# --- 5. Comparison Summary ---
+print("\n## Activation/Structure Comparison Summary")
+for name, acc in results.items():
+    print(f"* **{name}:** {acc*100:.2f}% Accuracy")
+
+# The RELU_Deep model should perform best on the non-linear moons data.

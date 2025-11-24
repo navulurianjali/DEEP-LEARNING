@@ -1,0 +1,68 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+
+# --- 1. Custom Spiral Data Generation ---
+def generate_spiral_data(N=100, K=2, noise=0.5, seed=42):
+    np.random.seed(seed)
+    X = np.zeros((N*K, 2))
+    y = np.zeros(N*K, dtype='uint8')
+    for j in range(K):
+        ix = range(N*j, N*(j+1))
+        r = np.linspace(0.0, 1, N) # radius
+        t = np.linspace(j*4, (j+1)*4, N) + np.random.randn(N)*noise # theta
+        X[ix] = np.c_[r*np.sin(t), r*np.cos(t)]
+        y[ix] = j
+    return X, y
+
+X, y = generate_spiral_data(N=200, K=2, noise=0.3)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# --- 2. Model Definition (Deeper for Spiral) ---
+model_spiral = Sequential([
+    Dense(32, input_dim=2, activation='relu'),
+    Dense(32, activation='relu'),
+    Dense(16, activation='relu'),
+    Dense(1, activation='sigmoid')
+])
+
+# --- 3. Model Compilation and Training ---
+model_spiral.compile(optimizer=Adam(learning_rate=0.005),
+                     loss='binary_crossentropy',
+                     metrics=['accuracy'])
+
+print("--- Training Spiral Data Model ---")
+history = model_spiral.fit(X_train, y_train,
+                           epochs=300,
+                           batch_size=32,
+                           verbose=0)
+
+# --- 4. Performance Verification ---
+loss, accuracy = model_spiral.evaluate(X_test, y_test, verbose=0)
+print(f"\n✅ Test Accuracy: {accuracy*100:.2f}%")
+print(f"Loss: {loss:.4f}")
+
+# --- 5. Visualization (Decision Boundary) ---
+# Reusing the binary plotting function from Q21
+def plot_decision_boundary(model, X, y, title):
+    h = 0.02
+    x_min, x_max = X[:, 0].min() - 0.1, X[:, 0].max() + 0.1
+    y_min, y_max = X[:, 1].min() - 0.1, X[:, 1].max() + 0.1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()], verbose=0)
+    Z = (Z > 0.5).astype(int).reshape(xx.shape)
+
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral, edgecolors='k')
+    plt.title(title)
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.show()
+
+plot_decision_boundary(model_spiral, X_test, y_test, "NN Decision Boundary (Spiral Data)")

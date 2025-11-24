@@ -1,0 +1,55 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.optimizers import Adam
+
+# --- 1. Data Generation ---
+X, y = make_moons(n_samples=200, noise=0.15, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# --- 2. Model Definition ---
+model_2class = Sequential([
+    Dense(10, input_dim=2, activation='relu'),
+    Dense(8, activation='relu'),
+    Dense(1, activation='sigmoid') # Sigmoid for binary classification
+])
+
+# --- 3. Model Compilation and Training ---
+model_2class.compile(optimizer=Adam(learning_rate=0.01),
+                     loss='binary_crossentropy',
+                     metrics=['accuracy'])
+
+print("--- Training Binary Model (make_moons) ---")
+history = model_2class.fit(X_train, y_train,
+                           epochs=100,
+                           batch_size=10,
+                           verbose=0)
+
+# --- 4. Performance Verification ---
+loss, accuracy = model_2class.evaluate(X_test, y_test, verbose=0)
+print(f"\n✅ Test Accuracy: {accuracy*100:.2f}%")
+print(f"Loss: {loss:.4f}")
+
+# --- 5. Visualization (Decision Boundary) ---
+def plot_decision_boundary(model, X, y, title):
+    h = 0.02
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()], verbose=0)
+    Z = (Z > 0.5).astype(int).reshape(xx.shape)
+
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral, alpha=0.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral, edgecolors='k')
+    plt.title(title)
+    plt.xlabel("Feature 1")
+    plt.ylabel("Feature 2")
+    plt.show()
+
+plot_decision_boundary(model_2class, X_test, y_test, "NN Decision Boundary (Two-Class Moons Data)")
